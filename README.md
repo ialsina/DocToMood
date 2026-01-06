@@ -1,6 +1,6 @@
 # DocToMoodle
 
-CLI tool to parse DOCX multiple-choice questions into Moodle XML and DOCX.
+CLI and GUI tool to parse DOCX multiple-choice questions into Moodle XML and DOCX.
 
 ## Installation
 
