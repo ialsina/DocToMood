@@ -1,9 +1,9 @@
-import docx
-from docx.enum.text import WD_COLOR_INDEX
 import math
-import pandas as pd
 from xml.sax.saxutils import escape
 
+import docx
+import pandas as pd
+from docx.enum.text import WD_COLOR_INDEX
 
 
 def get_docx(filename, join=False):
@@ -14,6 +14,7 @@ def get_docx(filename, join=False):
     if join:
         return "\n".join(paragraphs)
     return paragraphs
+
 
 def get_docx_with_highlight_mark(filename):
     doc = docx.Document(filename)
@@ -37,7 +38,6 @@ def get_docx_with_highlight_mark(filename):
 
 
 def df_to_docx(df, output_path="questions.docx"):
-
     doc = docx.Document()
 
     table = doc.add_table(rows=1, cols=6)
@@ -51,7 +51,6 @@ def df_to_docx(df, output_path="questions.docx"):
     hdr_cells[5].text = "extra"
 
     for _, row in df.iterrows():
-
         # safe read of correct value
         correct_val = row["correct"]
 
@@ -59,16 +58,13 @@ def df_to_docx(df, output_path="questions.docx"):
         highlight_index = None
 
         # numeric? finite? 0–3?
-        if (
-            isinstance(correct_val, (int, float)) and 
-            not math.isnan(correct_val)
-        ):
+        if isinstance(correct_val, (int, float)) and not math.isnan(correct_val):
             correct_int = int(correct_val)
             if 0 <= correct_int <= 3:
                 highlight_index = 1 + correct_int  # A=1, …
 
         cells = table.add_row().cells
-                                
+
         cells[0].text = str(row["question"])
         cells[1].text = str(row["ans0"])
         cells[2].text = str(row["ans1"])
@@ -86,15 +82,14 @@ def df_to_docx(df, output_path="questions.docx"):
     doc.save(output_path)
     print(f"Saved to {output_path}")
 
-def df_to_xml(df: pd.DataFrame, output_path="moodle_questions.xml"):
 
+def df_to_xml(df: pd.DataFrame, output_path="moodle_questions.xml"):
     def wrap_cdata(text):
         return f"<![CDATA[{text}]]>"
 
-    xml = ['<quiz>']
+    xml = ["<quiz>"]
 
     for i, row in df.iterrows():
-
         # define question name id
         qname = row.get("extra")
         if not isinstance(qname, str) or qname.strip() == "":
@@ -104,17 +99,17 @@ def df_to_xml(df: pd.DataFrame, output_path="moodle_questions.xml"):
         question_html = f"<p><strong>{i+1}.</strong> {escape(str(row['question']))}</p>"
 
         xml.append('  <question type="multichoice">')
-        xml.append('    <name>')
+        xml.append("    <name>")
         xml.append(f"      <text>{escape(qname)}</text>")
-        xml.append('    </name>')
+        xml.append("    </name>")
 
         xml.append('    <questiontext format="html">')
         xml.append(f"      <text>{wrap_cdata(question_html)}</text>")
-        xml.append('    </questiontext>')
+        xml.append("    </questiontext>")
 
         xml.append('    <generalfeedback format="html">')
         xml.append("      <text><![CDATA[]]></text>")
-        xml.append('    </generalfeedback>')
+        xml.append("    </generalfeedback>")
 
         xml.append("    <defaultgrade>1.0000000</defaultgrade>")
         xml.append("    <penalty>0.3333333</penalty>")
@@ -123,8 +118,8 @@ def df_to_xml(df: pd.DataFrame, output_path="moodle_questions.xml"):
         xml.append("    <shuffleanswers>true</shuffleanswers>")
         xml.append("    <answernumbering>abc</answernumbering>")
 
-        answers = [row['ans0'], row['ans1'], row['ans2'], row['ans3']]
-        correct_index = row['correct']
+        answers = [row["ans0"], row["ans1"], row["ans2"], row["ans3"]]
+        correct_index = row["correct"]
 
         for j, ans in enumerate(answers):
             if isinstance(correct_index, (int, float)) and int(correct_index) == j:
@@ -141,16 +136,18 @@ def df_to_xml(df: pd.DataFrame, output_path="moodle_questions.xml"):
 
         # feedback blocks
         xml.append('    <correctfeedback format="html">')
-        xml.append('      <text><![CDATA[¡Correcto!]]></text>')
-        xml.append('    </correctfeedback>')
+        xml.append("      <text><![CDATA[¡Correcto!]]></text>")
+        xml.append("    </correctfeedback>")
 
         xml.append('    <partiallycorrectfeedback format="html">')
-        xml.append('      <text><![CDATA[Parcialmente correcto.]]></text>')
-        xml.append('    </partiallycorrectfeedback>')
+        xml.append("      <text><![CDATA[Parcialmente correcto.]]></text>")
+        xml.append("    </partiallycorrectfeedback>")
 
         xml.append('    <incorrectfeedback format="html">')
-        xml.append('      <text><![CDATA[Incorrecto. Revisa la explicación y vuelve a intentarlo.]]></text>')
-        xml.append('    </incorrectfeedback>')
+        xml.append(
+            "      <text><![CDATA[Incorrecto. Revisa la explicación y vuelve a intentarlo.]]></text>"
+        )
+        xml.append("    </incorrectfeedback>")
 
         xml.append("  </question>")
 
