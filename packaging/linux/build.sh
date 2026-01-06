@@ -16,16 +16,21 @@ echo "Building doctomood-gui for Linux..."
 echo "Source project: $PROJECT_ROOT"
 echo "Packaging directory: $PACKAGING_DIR"
 
-# Check if PyInstaller is installed
-if ! command -v pyinstaller &> /dev/null; then
-    echo "PyInstaller not found. Installing..."
-    pip install pyinstaller
-fi
+# Ensure PyInstaller is installed and up-to-date
+echo "Upgrading PyInstaller to latest version..."
+pip install --upgrade "pyinstaller>=6.0.0"
 
-# Check if python-docx is installed
-if ! python -c "import docx" 2>/dev/null; then
-    echo "python-docx not found. Installing..."
-    pip install python-docx
+# Install build dependencies
+if [ -f "requirements-build.txt" ]; then
+    echo "Installing build dependencies..."
+    pip install -r requirements-build.txt
+else
+    # Fallback: install individual packages
+    if ! python -c "import docx" 2>/dev/null; then
+        echo "python-docx not found. Installing..."
+        pip install python-docx
+    fi
+    pip install platformdirs
 fi
 
 # Clean previous builds (PyInstaller's temporary build directory and our output)
@@ -53,7 +58,7 @@ if [ -f "build/doctomood-gui/doctomood-gui" ]; then
     cd ..
 
     if [ -f "build/$BUILD_NAME" ]; then
-        echo "✓ Distribution archive created!"
+        echo "Distribution archive created!"
         echo "  Archive: $PACKAGING_DIR/build/$BUILD_NAME"
         echo ""
         echo "To test the executable, run:"
@@ -62,10 +67,10 @@ if [ -f "build/doctomood-gui/doctomood-gui" ]; then
         echo "To distribute, share the archive:"
         echo "  $PACKAGING_DIR/build/$BUILD_NAME"
     else
-        echo "⚠ Warning: Archive creation failed, but executable is available"
+        echo "Warning: Archive creation failed, but executable is available"
         echo "To distribute, package the entire 'build/doctomood-gui/' directory"
     fi
 else
-    echo "✗ Build failed!"
+    echo "Build failed!"
     exit 1
 fi

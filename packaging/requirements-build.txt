@@ -1,5 +1,9 @@
 # Requirements for building standalone executables
-pyinstaller>=5.13.0
+pyinstaller>=6.0.0
+
+# PyInstaller runtime dependencies
+platformdirs
+setuptools
 
 # Application dependencies (also needed for building)
 python-docx

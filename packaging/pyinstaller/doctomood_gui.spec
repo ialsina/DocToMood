@@ -5,7 +5,7 @@
 
 import os
 from pathlib import Path
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_all
 
 # Get absolute paths
 # PyInstaller runs from the directory where pyinstaller is invoked
@@ -73,17 +73,42 @@ try:
 except Exception:
     tqdm_imports = ['tqdm']
 
+# Collect platformdirs (PyInstaller runtime dependency) - use collect_all for completeness
+try:
+    platformdirs_datas, platformdirs_binaries, platformdirs_imports = collect_all('platformdirs')
+    print(f"  - platformdirs: {len(platformdirs_imports)} submodules, {len(platformdirs_datas)} data files")
+except Exception as e:
+    print(f"  - platformdirs: failed to collect with collect_all ({e}), using fallback")
+    platformdirs_imports = ['platformdirs']
+    platformdirs_datas = []
+    platformdirs_binaries = []
+
+# Collect setuptools and pkg_resources (required by PyInstaller runtime)
+try:
+    setuptools_imports = collect_submodules('setuptools')
+    pkg_resources_imports = collect_submodules('pkg_resources')
+    print(f"  - setuptools: {len(setuptools_imports)} submodules")
+    print(f"  - pkg_resources: {len(pkg_resources_imports)} submodules")
+except Exception:
+    setuptools_imports = ['setuptools']
+    pkg_resources_imports = ['pkg_resources']
+
 # Collect data files for packages that need them
 pandas_datas = collect_data_files('pandas', include_py_files=False)
 numpy_datas = collect_data_files('numpy', include_py_files=False)
+
+# Combine all data files
+all_datas = pandas_datas + numpy_datas
+if 'platformdirs_datas' in locals():
+    all_datas += platformdirs_datas
 
 block_cipher = None
 
 a = Analysis(
     [str(PROJECT_ROOT / 'src' / 'doctomood' / 'gui.py')],
     pathex=[str(PROJECT_ROOT / 'src')],
-    binaries=[],
-    datas=pandas_datas + numpy_datas,
+    binaries=platformdirs_binaries if 'platformdirs_binaries' in locals() else [],
+    datas=all_datas,
     hiddenimports=[
         # Doctomood modules
         'doctomood',
@@ -91,12 +116,13 @@ a = Analysis(
         'doctomood.process',
         'doctomood.ioutils',
         'doctomood.parser',
-    ] + pandas_imports + numpy_imports + docx_imports + yaml_imports + lxml_imports + odf_imports + openpyxl_imports + pytz_imports + dateutil_imports + tqdm_imports + [
+    ] + pandas_imports + numpy_imports + docx_imports + yaml_imports + lxml_imports + odf_imports + openpyxl_imports + pytz_imports + dateutil_imports + tqdm_imports + platformdirs_imports + setuptools_imports + pkg_resources_imports + [
         # Additional explicit imports that might be missed
         'tkinter',
         'tkinter.filedialog',
         'tkinter.messagebox',
         'tkinter.ttk',
+        'pkg_resources.py2_warn',
     ],
     hookspath=[str(PACKAGING_DIR / 'pyinstaller' / 'hooks')],
     hooksconfig={},
