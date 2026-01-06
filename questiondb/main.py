@@ -28,6 +28,11 @@ def get_parser():
         type=Path,
         required=False,
     )
+    parser.add_argument(
+        "--no-write",
+        action="store_false",
+        dest="write",
+    )
     defaults = parse_config()
     parser.set_defaults(**defaults)
     return parser
@@ -48,11 +53,12 @@ def main():
 
     df = process_glob(args.input)
 
-    df_to_docx(df, docs_output)
-    print(f"Saved DOCX file to {docs_output}")
+    if args.write:
+        df_to_docx(df, docs_output)
+        print(f"Saved DOCX file to {docs_output}")
 
-    df_to_xml(df, xml_output)
-    print(f"Saved Moodle XML file to {xml_output}")
+        df_to_xml(df, xml_output)
+        print(f"Saved Moodle XML file to {xml_output}")
 
 if __name__ == "__main__":
     main()
