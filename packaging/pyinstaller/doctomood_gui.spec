@@ -7,8 +7,10 @@ import os
 from pathlib import Path
 
 # Get absolute paths
-SPEC_DIR = Path(__file__).parent.absolute()
-PACKAGING_DIR = SPEC_DIR.parent
+# PyInstaller runs from the directory where pyinstaller is invoked
+# Our build scripts ensure we're in the packaging directory before running pyinstaller
+# So os.getcwd() will be the packaging directory
+PACKAGING_DIR = Path(os.getcwd()).resolve()
 PROJECT_ROOT = PACKAGING_DIR.parent
 
 block_cipher = None
