@@ -22,22 +22,30 @@ if ! command -v pyinstaller &> /dev/null; then
     pip install pyinstaller
 fi
 
+# Check if python-docx is installed
+if ! python -c "import docx" 2>/dev/null; then
+    echo "python-docx not found. Installing..."
+    pip install python-docx
+fi
+
 # Clean previous builds (PyInstaller's temporary build directory and our output)
 echo "Cleaning previous builds..."
-rm -rf build_pyinstaller build/doctomood-gui
+rm -rf build_pyinstaller build/doctomood-gui build/*.exe
 
 # Build using the spec file, output to build directory
 echo "Building executable..."
 pyinstaller --distpath build --workpath build_pyinstaller pyinstaller/doctomood_gui.spec
 
-# Check if build was successful
-if [ -f "build/doctomood-gui" ]; then
+# Check if build was successful (onedir mode creates a directory)
+if [ -f "build/doctomood-gui/doctomood-gui" ]; then
     echo ""
     echo "✓ Build successful!"
-    echo "  Executable location: $PACKAGING_DIR/build/doctomood-gui"
+    echo "  Executable location: $PACKAGING_DIR/build/doctomood-gui/doctomood-gui"
     echo ""
     echo "To test the executable, run:"
-    echo "  $PACKAGING_DIR/build/doctomood-gui"
+    echo "  $PACKAGING_DIR/build/doctomood-gui/doctomood-gui"
+    echo ""
+    echo "To distribute, package the entire 'build/doctomood-gui/' directory"
 else
     echo "✗ Build failed!"
     exit 1
