@@ -35,6 +35,9 @@ doctomood = "doctomood.main:main"
 requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+packages = ["doctomood"]
+
 [tool.black]
 line-length = 88
 target-version = ["py310"]
@@ -43,24 +46,9 @@ target-version = ["py310"]
 profile = "black"
 line_length = 88
 
-[tool.pylint.main]
-py-version = "3.10"
-load-plugins = []
-
 [tool.pylint.messages_control]
 disable = [
   "missing-module-docstring",
   "missing-function-docstring",
   "missing-class-docstring",
 ]
-
-[tool.mypy]
-python_version = "3.10"
-warn_unused_configs = true
-disallow_untyped_defs = false
-check_untyped_defs = true
-ignore_missing_imports = true
-
-[tool.bandit]
-skips = []
-targets = ["doctomood"]

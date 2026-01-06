@@ -1,19 +1,42 @@
 from argparse import ArgumentParser
-from glob import glob
-import yaml
 from datetime import datetime
+from glob import glob
 from pathlib import Path
 
-ROOT_DIR = Path(__file__).parent.parent
-CONFIG_FILE = ROOT_DIR / "config.yml"
+import yaml
 
-from process import process_multiple
-from ioutils import df_to_docx, df_to_xml
+from doctomood.ioutils import df_to_docx, df_to_xml
+from doctomood.process import process_multiple
+
+
+def find_config_file():
+    """Find config.yml file, checking current directory first, then project root."""
+    # Check current working directory first (most common use case)
+    cwd_config = Path.cwd() / "config.yml"
+    if cwd_config.exists():
+        return cwd_config
+
+    # Check project root (for development)
+    project_root = Path(__file__).parent.parent
+    project_config = project_root / "config.yml"
+    if project_config.exists():
+        return project_config
+
+    # Return None if not found (will use defaults)
+    return None
+
 
 def parse_config():
-    with open(CONFIG_FILE, "r") as f:
-        config = yaml.safe_load(f)
-    return config
+    config_file = find_config_file()
+    if config_file is None:
+        return {}
+    try:
+        with open(config_file, "r") as f:
+            config = yaml.safe_load(f)
+        return config if config else {}
+    except Exception:
+        return {}
+
 
 def get_parser():
     parser = ArgumentParser()
@@ -37,11 +60,13 @@ def get_parser():
     parser.set_defaults(**defaults)
     return parser
 
+
 def process_glob(glob_patterns):
     paths = []
     for glob_pattern in glob_patterns:
         paths.extend(glob(glob_pattern))
     return process_multiple(paths)
+
 
 def main():
     args = get_parser().parse_args()
@@ -59,6 +84,7 @@ def main():
 
         df_to_xml(df, xml_output)
         print(f"Saved Moodle XML file to {xml_output}")
+
 
 if __name__ == "__main__":
     main()

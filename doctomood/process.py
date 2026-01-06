@@ -4,7 +4,8 @@ from itertools import zip_longest
 
 import docx
 import pandas as pd
-from ioutils import get_docx_with_highlight_mark
+
+from doctomood.ioutils import get_docx_with_highlight_mark
 
 MIN_QUESTION_LENGTH = 12
 MAX_QUESTION_DIGIT_FRACTION = 0.32
