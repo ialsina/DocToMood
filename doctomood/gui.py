@@ -156,30 +156,6 @@ class DoctomoodGUI:
         )
         self.status_label.pack(pady=(5, 0))
 
-        # Close button section - centered
-        close_section = ttk.Frame(main_container)
-        close_section.pack(fill=tk.X, pady=(15, 0))
-
-        close_button_container = ttk.Frame(close_section)
-        close_button_container.pack(expand=True)
-
-        self.close_button = tk.Button(
-            close_button_container,
-            text="✕ Close",
-            command=self.root.quit,
-            font=("Helvetica", 10, "bold"),
-            bg="#DC3545",
-            fg="white",
-            activebackground="#C82333",
-            activeforeground="white",
-            relief=tk.RAISED,
-            bd=2,
-            padx=20,
-            pady=8,
-            cursor="hand2",
-        )
-        self.close_button.pack(pady=5)
-
         # Update button state when variables change
         self.input_file.trace_add("write", self.update_button_state)
         self.output_dir.trace_add("write", self.update_button_state)
