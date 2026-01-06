@@ -98,7 +98,7 @@ a = Analysis(
         'tkinter.messagebox',
         'tkinter.ttk',
     ],
-    hookspath=[],
+    hookspath=[str(PACKAGING_DIR / 'pyinstaller' / 'hooks')],
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
@@ -136,7 +136,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon path here if you have one: 'icon.ico' for Windows, 'icon.icns' for macOS
+    icon=str(PROJECT_ROOT / 'assets' / 'icon.ico'),
 )
 
 coll = COLLECT(

@@ -17,11 +17,25 @@ The packaging directory is organized as follows:
 ```
 packaging/
 ├─ pyinstaller/
-│  └─ doctomood_gui.spec
+│  ├─ doctomood_gui.spec      # PyInstaller configuration
+│  └─ hooks/
+│     └─ hook-docx.py          # Custom hook for python-docx package
 ├─ linux/
-│  └─ build.sh
-└─ windows/
-   └─ build.ps1
+│  └─ build.sh                 # Linux build script
+├─ macos/
+│  └─ build.sh                 # macOS build script
+├─ windows/
+│  └─ build.ps1                # Windows build script
+├─ get_build_info.py           # Utility to extract version and build metadata
+├─ requirements-build.txt      # Build dependencies
+└─ BUILD.md                    # This file
+```
+
+And in the project root:
+
+```
+assets/
+└─ icon.ico                    # Application icon (embedded in executable)
 ```
 
 ## Quick Start
@@ -38,7 +52,24 @@ cd packaging
 # Build the executable
 ./linux/build.sh
 
-# The executable will be in packaging/build/doctomood-gui
+# The executable will be in packaging/build/doctomood-gui/
+# Distribution archive will be at packaging/build/doctomood-gui-{version}-linux-{arch}.tar.gz
+```
+
+### macOS
+
+```bash
+# Navigate to the packaging directory
+cd packaging
+
+# Install build dependencies (if requirements-build.txt exists)
+# pip install -r requirements-build.txt
+
+# Build the executable
+./macos/build.sh
+
+# The application will be in packaging/build/doctomood-gui/
+# Distribution archive will be at packaging/build/doctomood-gui-{version}-macos-{arch}.tar.gz
 ```
 
 ### Windows
@@ -53,14 +84,13 @@ cd packaging
 # Build the executable
 .\windows\build.ps1
 
-# The executable will be in packaging\build\doctomood-gui.exe
+# The executable will be in packaging\build\doctomood-gui\doctomood-gui.exe
+# Distribution archive will be at packaging\build\doctomood-gui-{version}-windows-{arch}.zip
 ```
 
 ## Manual Build
 
-If you prefer to build manually:
-
-### Linux/Windows
+If you prefer to build manually on any platform:
 
 ```bash
 # Navigate to the packaging directory
@@ -71,26 +101,60 @@ pip install pyinstaller
 
 # Build using the spec file, output to build directory
 pyinstaller --distpath build --workpath build_pyinstaller pyinstaller/doctomood_gui.spec
+
+# Create distribution archive
+python get_build_info.py buildname  # Get the build name
+# Then create archive manually based on your platform
 ```
 
 The executable will be created in `packaging/build/` directory.
 
-## Customization
+## Distribution Archives
 
-### Adding an Icon
+The build scripts automatically create distribution-ready archives with the following naming convention:
 
-To add a custom icon to your executable:
-
-1. **Windows**: Create or obtain an `.ico` file
-2. **Linux**: Create or obtain a `.png` file (PyInstaller will convert it)
-
-Then edit `packaging/pyinstaller/doctomood_gui.spec` and update the `icon` parameter in the `EXE` section:
-
-```python
-icon='path/to/your/icon.ico',  # Windows
-# or
-icon='path/to/your/icon.png',  # Linux
 ```
+{appname}-{version}-{os}-{arch}.{ext}
+```
+
+Examples:
+- Linux: `doctomood-gui-0.0.1-linux-x86_64.tar.gz`
+- macOS: `doctomood-gui-0.0.1-macos-arm64.tar.gz`
+- Windows: `doctomood-gui-0.0.1-windows-x86_64.zip`
+
+The version is automatically extracted from `pyproject.toml`, and OS/architecture are detected at build time.
+
+### macOS DMG Creation (Optional)
+
+For macOS, you can optionally create a DMG file for easier distribution:
+
+```bash
+cd packaging
+hdiutil create -volname doctomood-gui \
+  -srcfolder build/doctomood-gui \
+  -ov -format UDZO \
+  build/doctomood-gui.dmg
+```
+
+## Icon
+
+The application icon is automatically included from `assets/icon.ico` during the build process. To customize:
+
+1. Create or replace the icon file in the `assets/` directory:
+   - **Windows**: `assets/icon.ico` (recommended: 256x256 or multiple sizes in one .ico file)
+   - **macOS**: `assets/icon.icns` (use `iconutil` to create from .iconset)
+   - **Linux**: `assets/icon.ico` or `assets/icon.png` works
+
+2. Update the icon path in `packaging/pyinstaller/doctomood_gui.spec` if using a different file:
+   ```python
+   icon=str(PROJECT_ROOT / 'assets' / 'icon.ico'),  # or 'icon.icns' for macOS
+   ```
+
+3. The icon will be automatically embedded in the executable during the next build
+
+**Note**: Currently, the spec file uses `icon.ico` which works for Windows and Linux. For macOS app bundles, create an `icon.icns` file and update the spec accordingly.
+
+## Customization
 
 ### Modifying Hidden Imports
 
@@ -151,11 +215,32 @@ Some antivirus software may flag PyInstaller executables as suspicious. This is 
 
 ## Distribution
 
-After building, you can distribute:
-- **Linux**: The `packaging/build/doctomood-gui` file
-- **Windows**: The `packaging\build\doctomood-gui.exe` file
+After building, distribute the generated archive file:
+- **Linux**: `packaging/build/doctomood-gui-{version}-linux-{arch}.tar.gz`
+- **macOS**: `packaging/build/doctomood-gui-{version}-macos-{arch}.tar.gz`
+- **Windows**: `packaging\build\doctomood-gui-{version}-windows-{arch}.zip`
 
-The executable is standalone and doesn't require Python or any dependencies to be installed on the target machine.
+Users can extract the archive and run the executable directly. No Python or dependencies are required on the target machine.
+
+**macOS Note**: If you created a DMG file, distribute that instead for a more native macOS experience.
+
+### Build Information Utility
+
+The `packaging/get_build_info.py` script provides build metadata:
+
+```bash
+# Get version
+python get_build_info.py version
+
+# Get OS name
+python get_build_info.py os
+
+# Get architecture
+python get_build_info.py arch
+
+# Get full build name
+python get_build_info.py buildname
+```
 
 ## Build Location
 

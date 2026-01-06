@@ -41,11 +41,30 @@ if [ -f "build/doctomood-gui/doctomood-gui" ]; then
     echo ""
     echo "✓ Build successful!"
     echo "  Executable location: $PACKAGING_DIR/build/doctomood-gui/doctomood-gui"
+
+    # Get build name using the utility script
     echo ""
-    echo "To test the executable, run:"
-    echo "  $PACKAGING_DIR/build/doctomood-gui/doctomood-gui"
-    echo ""
-    echo "To distribute, package the entire 'build/doctomood-gui/' directory"
+    echo "Creating distribution archive..."
+    BUILD_NAME=$(python get_build_info.py buildname)
+
+    # Create tar.gz archive in the build directory
+    cd build
+    tar -czf "$BUILD_NAME" doctomood-gui/
+    cd ..
+
+    if [ -f "build/$BUILD_NAME" ]; then
+        echo "✓ Distribution archive created!"
+        echo "  Archive: $PACKAGING_DIR/build/$BUILD_NAME"
+        echo ""
+        echo "To test the executable, run:"
+        echo "  $PACKAGING_DIR/build/doctomood-gui/doctomood-gui"
+        echo ""
+        echo "To distribute, share the archive:"
+        echo "  $PACKAGING_DIR/build/$BUILD_NAME"
+    else
+        echo "⚠ Warning: Archive creation failed, but executable is available"
+        echo "To distribute, package the entire 'build/doctomood-gui/' directory"
+    fi
 else
     echo "✗ Build failed!"
     exit 1

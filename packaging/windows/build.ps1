@@ -55,11 +55,33 @@ if (Test-Path "build\doctomood-gui\doctomood-gui.exe") {
     Write-Host ""
     Write-Host "✓ Build successful!" -ForegroundColor Green
     Write-Host "  Executable location: $PackagingDir\build\doctomood-gui\doctomood-gui.exe"
+
+    # Get build name using the utility script
     Write-Host ""
-    Write-Host "To test the executable, run:"
-    Write-Host "  $PackagingDir\build\doctomood-gui\doctomood-gui.exe"
-    Write-Host ""
-    Write-Host "To distribute, package the entire 'build\doctomood-gui\' directory"
+    Write-Host "Creating distribution archive..."
+    $BuildName = python get_build_info.py buildname
+
+    # Create ZIP archive in the build directory
+    $ZipPath = "build\$BuildName"
+    if (Test-Path $ZipPath) {
+        Remove-Item $ZipPath
+    }
+
+    Compress-Archive -Path "build\doctomood-gui" -DestinationPath $ZipPath -CompressionLevel Optimal
+
+    if (Test-Path $ZipPath) {
+        Write-Host "✓ Distribution archive created!" -ForegroundColor Green
+        Write-Host "  Archive: $PackagingDir\build\$BuildName"
+        Write-Host ""
+        Write-Host "To test the executable, run:"
+        Write-Host "  $PackagingDir\build\doctomood-gui\doctomood-gui.exe"
+        Write-Host ""
+        Write-Host "To distribute, share the archive:"
+        Write-Host "  $PackagingDir\build\$BuildName"
+    } else {
+        Write-Host "⚠ Warning: Archive creation failed, but executable is available" -ForegroundColor Yellow
+        Write-Host "To distribute, package the entire 'build\doctomood-gui\' directory"
+    }
 } else {
     Write-Host "✗ Build failed!" -ForegroundColor Red
     exit 1
