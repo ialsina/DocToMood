@@ -1,0 +1,9 @@
+# Requirements for building standalone executables
+pyinstaller>=5.13.0
+
+# Application dependencies (also needed for building)
+python-docx
+odfpy
+pandas
+pyyaml
+tqdm
