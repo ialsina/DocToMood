@@ -17,7 +17,9 @@ RE_REPL_ANSWER = [
     # re.compile(r"^-*\s*(?=\b)"),
     re.compile(r"^-*\s*"),
 ]
-RE_ANSWER_MARK = re.compile(r"^([a-d])(?:[.\)\-\s])*(?=\b)")
+RE_ANSWER_MARK = re.compile(r"^([a-d])(?:[.\)\-\s]+)(?=\w|$)", re.IGNORECASE)
+RE_ANSWER_MARK_SPACE_ONLY = re.compile(r"^([a-d])\s+(?=\w)", re.IGNORECASE)
+RE_REPL_ANSWER_SPACE_ONLY = re.compile(r"^([a-d])\s+", re.IGNORECASE)
 EXTRA_CONTENT_WORDS = ["explicacion", "nota"]
 
 
@@ -51,6 +53,65 @@ def _get_correct_answers(answers):
 def _is_answer_line(line: str) -> bool:
     """Check if a line starts with an answer marker (a, b, c, d)."""
     return RE_ANSWER_MARK.match(line.strip()) is not None
+
+
+def _extract_answer_letter(line: str):
+    """
+    Extract the answer letter (a, b, c, d) from a line if it matches RE_ANSWER_MARK.
+
+    Returns:
+        tuple: (letter, is_space_only) or (None, None) if no match
+            - letter: lowercase letter (a-d)
+            - is_space_only: True if matched space-only format, False if punctuation format
+    """
+    line_stripped = line.strip()
+    # Check space-only format first
+    match_space = RE_ANSWER_MARK_SPACE_ONLY.match(line_stripped)
+    if match_space:
+        return match_space.group(1).lower(), True
+
+    # Check regular format with punctuation
+    match = RE_ANSWER_MARK.match(line_stripped)
+    if match:
+        return match.group(1).lower(), False
+
+    return None, None
+
+
+def _validate_answer_marks(candidate_lines):
+    """
+    Validate answer marks across all candidate lines.
+
+    Returns:
+        tuple: (is_valid, answer_indices, answer_letters, is_space_only_format)
+            - is_valid: True if all marks are valid (no duplicates, all are a-d)
+            - answer_indices: List of indices (relative to candidates) that have valid marks
+            - answer_letters: List of extracted letters (lowercase)
+            - is_space_only_format: True if all answers use space-only format (no punctuation)
+    """
+    answer_indices = []
+    answer_letters = []
+    space_only_flags = []
+
+    for i, line in enumerate(candidate_lines):
+        letter, is_space_only = _extract_answer_letter(line)
+        if letter is not None:
+            answer_indices.append(i)
+            answer_letters.append(letter)
+            space_only_flags.append(is_space_only)
+
+    # Check for duplicates
+    if len(answer_letters) != len(set(answer_letters)):
+        return False, [], [], False
+
+    # Must have at least one valid answer mark
+    if not answer_letters:
+        return False, [], [], False
+
+    # Check if all answers use space-only format
+    is_space_only_format = all(space_only_flags) if space_only_flags else False
+
+    return True, answer_indices, answer_letters, is_space_only_format
 
 
 def find_blocks(paragraphs):
@@ -178,30 +239,49 @@ def process(paragraphs, as_dataframe=True):
 
         # Determine candidate answer lines (2nd to 5th lines in the block)
         candidate_end = min(5, n_lines)
+        candidate_lines = block[1:candidate_end] if candidate_end > 1 else []
         candidate_indices = list(range(1, candidate_end))
 
-        # First, look for labeled answers ONLY within lines 2–5
+        # Validate answer marks across all candidates
+        (
+            is_valid,
+            valid_answer_indices,
+            answer_letters,
+            is_space_only_format,
+        ) = _validate_answer_marks(candidate_lines)
+
         answers = []
         answer_indices = []
-        labeled_indices = [i for i in candidate_indices if _is_answer_line(block[i])]
 
-        if labeled_indices:
-            # Use only labeled lines within 2–5 as answers
-            answer_indices = labeled_indices
-            answers = [block[i] for i in labeled_indices]
+        if is_valid:
+            # Use only validated labeled lines within 2–5 as answers
+            # Convert relative indices to absolute block indices
+            answer_indices = [candidate_indices[i] for i in valid_answer_indices]
+            answers = [block[i] for i in answer_indices]
             # Only take up to 4 answers, right-pad if needed
             answers = _right_pad(answers[:4], 4)
         else:
-            # If no labeled answers found in 2–5, fall back to assuming positions 2–5 are answers
-            answers = block[1:candidate_end]
+            # If validation fails (duplicates or no marks), fall back to regular behavior
+            # Assume positions 2–5 are answers
+            answers = candidate_lines
             answer_indices = candidate_indices
+            is_space_only_format = False
 
         answers, correct = _get_correct_answers(answers)
 
         # Clean up question and answer text
         question = re.sub(RE_REPL_QUESTION, "", question).strip()
-        answers = [re.sub(RE_REPL_ANSWER[0], "", a).strip() for a in answers]
-        answers = [re.sub(RE_REPL_ANSWER[1], "", a).strip() for a in answers]
+
+        # Use different cleaning logic based on format
+        if is_space_only_format:
+            # For space-only format, remove letter and space
+            answers = [
+                re.sub(RE_REPL_ANSWER_SPACE_ONLY, "", a).strip() for a in answers
+            ]
+        else:
+            # For regular format with punctuation, use existing cleaning
+            answers = [re.sub(RE_REPL_ANSWER[0], "", a).strip() for a in answers]
+            answers = [re.sub(RE_REPL_ANSWER[1], "", a).strip() for a in answers]
 
         # Extra content:
         # - Any non-answer line among the 2–5 candidate lines
