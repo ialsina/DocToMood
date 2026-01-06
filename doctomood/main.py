@@ -1,64 +1,10 @@
-from argparse import ArgumentParser
 from datetime import datetime
 from glob import glob
 from pathlib import Path
 
-import yaml
-
 from doctomood.ioutils import df_to_docx, df_to_xml
+from doctomood.parser import get_parser
 from doctomood.process import process_multiple
-
-
-def find_config_file():
-    """Find config.yml file, checking current directory first, then project root."""
-    # Check current working directory first (most common use case)
-    cwd_config = Path.cwd() / "config.yml"
-    if cwd_config.exists():
-        return cwd_config
-
-    # Check project root (for development)
-    project_root = Path(__file__).parent.parent
-    project_config = project_root / "config.yml"
-    if project_config.exists():
-        return project_config
-
-    # Return None if not found (will use defaults)
-    return None
-
-
-def parse_config():
-    config_file = find_config_file()
-    if config_file is None:
-        return {}
-    try:
-        with open(config_file, "r") as f:
-            config = yaml.safe_load(f)
-        return config if config else {}
-    except Exception:
-        return {}
-
-
-def get_parser():
-    parser = ArgumentParser()
-    parser.add_argument(
-        "input",
-        type=str,
-        nargs="+",
-    )
-    parser.add_argument(
-        "-o",
-        "--output-dir",
-        type=Path,
-        required=False,
-    )
-    parser.add_argument(
-        "--no-write",
-        action="store_false",
-        dest="write",
-    )
-    defaults = parse_config()
-    parser.set_defaults(**defaults)
-    return parser
 
 
 def process_glob(glob_patterns):
@@ -70,11 +16,29 @@ def process_glob(glob_patterns):
 
 def main():
     args = get_parser().parse_args()
-    now = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = args.output_dir
 
-    docs_output = output_dir / f"questions_{now}.docx"
-    xml_output = output_dir / f"moodle_questions_{now}.xml"
+    if args.respect_name:
+        if len(args.input) > 1:
+            raise ValueError(
+                "--respect-name can only be used with a single input file. "
+                f"Got {len(args.input)} input(s): {args.input}"
+            )
+        # Get the first (and only) input pattern, expand glob, and get the stem
+        input_paths = glob(args.input[0])
+        if not input_paths:
+            raise ValueError(f"No files found matching pattern: {args.input[0]}")
+        if len(input_paths) > 1:
+            raise ValueError(
+                "--respect-name can only be used with a single input file. "
+                f"Pattern '{args.input[0]}' matched {len(input_paths)} file(s): {input_paths}"
+            )
+        name_stem = Path(input_paths[0]).stem
+    else:
+        name_stem = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    docs_output = output_dir / f"questions_{name_stem}.docx"
+    xml_output = output_dir / f"questions_{name_stem}.xml"
 
     df = process_glob(args.input)
 
