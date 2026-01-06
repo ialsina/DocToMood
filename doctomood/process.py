@@ -176,8 +176,6 @@ def process(paragraphs, as_dataframe=True):
 
         question = block[0]
 
-        print(block)
-
         # Determine candidate answer lines (2nd to 5th lines in the block)
         candidate_end = min(5, n_lines)
         candidate_indices = list(range(1, candidate_end))
