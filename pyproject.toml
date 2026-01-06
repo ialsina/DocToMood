@@ -30,6 +30,7 @@ dev = [
 
 [project.scripts]
 doctomood = "doctomood.main:main"
+doctomood-gui = "doctomood.gui:main"
 
 [build-system]
 requires = ["setuptools>=61", "wheel"]
