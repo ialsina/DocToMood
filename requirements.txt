@@ -1,5 +1,0 @@
-ipython
-jupyter
-jupyterlab
-python-docx
-odfpy
